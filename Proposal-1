@@ -1,0 +1,50 @@
+Project Proposal
+Traffic-Speed Forecasting Using Graph Neural Networks
+Deep Learning Course 258-03, Fall 2026, San José State University
+
+Team Members: Lavya Sri Bonagiri(017552834), Mansi Gupta (020088497), Megha Gangal (020096869)
+
+
+1. DATASET
+The project will use the METR-LA traffic dataset (github.com/liyaguang/DCRNN), which records speed measurements from 207 traffic sensors positioned along Los Angeles County highways, sampled at five-minute intervals over a four-month period.
+
+2. PROJECT IDEA, RESEARCH PROBLEM AND SIGNIFICANCE
+Accurate traffic prediction can help drivers choose better routes, reduce traffic congestion and improve traffic-light control. However, many traditional time-series models only study how traffic changes over time and do not consider how nearby roads affect one another.
+This project will predict traffic speed at each sensor 15, 30 and 60 minutes into the future, corresponding to 3, 6 and 12 steps ahead, respectively, because the dataset uses a five-minute sampling interval. We will represent the traffic sensor network as a graph, where each sensor is a node and edges encode road connectivity and the distance between sensors. This structure allows the model to learn both how traffic changes over time and how conditions at one sensor may affect connected sensors.
+
+
+3. PROPOSED METHODOLOGY
+
+We will use the METR-LA dataset, which contains traffic-speed readings collected every five minutes from sensors in Los Angeles. First, we will clean the data, handle missing values, normalize the speed readings, and divide the data into training, validation and testing sets. We will also create a graph in which each traffic sensor is represented as a node. The connections between sensors will be based on the distances between them on the road network.
+We will first create a historical-average model as a simple baseline. This model will predict future traffic speed using average traffic patterns from previous time periods. Next, we will train an LSTM model to learn changes in traffic over time. Finally, we will implement the Diffusion Convolutional Recurrent Neural Network (DCRNN) proposed by Li et al[1]. DCRNN uses graph convolutions to learn how traffic conditions move between connected sensors and recurrent layers to learn how traffic changes over time. We will use the author’s publicly available implementation as a starting point and retrain it on the METR-LA dataset.
+To extend the original work, we will test the model when some sensor readings are randomly missing. We will also compare distance-based sensor connections with correlation-based connections. The models will be evaluated using MAE, RMSE, and MAPE for 15, 30, and 60-minute predictions. We will also create plots comparing predicted and actual traffic speeds and analyze which model performs best under normal and missing-data conditions.
+
+4. BASELINES AND EXPECTED RESULTS
+
+We will compare the DCRNN model with two simpler models: a historical-average model and an LSTM model. The historical-average model will use past traffic patterns to make predictions, while the LSTM will learn how traffic speed changes over time.
+We will evaluate all three models using MAE, RMSE and MAPE for different prediction periods, including 15, 30 and 60 minutes into the future. We will create plots showing the predicted and actual traffic speeds, training-loss curves and error comparisons for each prediction period.
+We expect DCRNN to perform better than the historical-average and LSTM models because it considers both time patterns and relationships between connected traffic sensors. We also expect the difference between DCRNN and the other models to become larger when predicting farther into the future.
+
+5. TENTATIVE TEAM ROLES:
+
+Team Member
+Responsibilities
+Mansi Gupta
+Data preprocessing, missing-value handling, dataset preparation, and STGCN implementation
+Megha Gangal
+Traffic-sensor graph construction, distance- and correlation-based graphs, DCRNN implementation, and model training
+Lavya Sri Bonagiri
+Historical-average and LSTM baseline models, evaluation using MAE, RMSE, and MAPE, and result visualization
+All Members
+Paper review, code review, missing-data experiments, graph-structure comparison, final analysis, report, and presentation
+
+
+6. REFERENCES
+
+
+[1]  Li, Y., Yu, R., Shahabi, C., & Liu, Y. (2018). Diffusion Convolutional Recurrent Neural Network: Data-Driven Traffic Forecasting. Proceedings of ICLR 2018. https://arxiv.org/abs/1707.01926
+[2]  Yu, B., Yin, H., & Zhu, Z. (2018). Spatio-Temporal Graph Convolutional Networks: A Deep Learning Framework for Traffic Forecasting. Proceedings of IJCAI 2018. https://arxiv.org/abs/1709.04875
+[3]  Kipf, T. N., & Welling, M. (2017). Semi-Supervised Classification with Graph Convolutional Networks. Proceedings of ICLR 2017. https://arxiv.org/abs/1609.02907
+
+
+For Model training and evaluation, HPC system access will be required. 
