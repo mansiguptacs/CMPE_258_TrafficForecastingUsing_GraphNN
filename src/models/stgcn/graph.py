@@ -10,6 +10,10 @@ def get_adjacency(cfg: dict, data: dict) -> np.ndarray:
     kind = cfg["graph"]["adjacency"]
     if kind == "distance":
         return data["adj_distance"]
+    if kind == "identity":
+        # No edges: every sensor only sees itself. Same STGCN with the spatial mixing switched off,
+        # used to measure how much the road graph contributes.
+        return np.zeros_like(data["adj_distance"])
     if kind == "correlation":
         path = processed_dir(cfg) / "adj_correlation.npy"
         if not path.exists():

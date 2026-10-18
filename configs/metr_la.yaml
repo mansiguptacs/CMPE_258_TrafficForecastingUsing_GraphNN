@@ -40,7 +40,7 @@ missing:
   input_imputation: ffill
 
 graph:
-  adjacency: distance     # distance | correlation
+  adjacency: distance     # distance | correlation | identity (no edges, for the no-graph ablation)
   correlation_top_k: 10   # used only when adjacency == correlation
 
 stgcn:
@@ -51,6 +51,8 @@ stgcn:
   batch_size: 64
   lr: 0.001
   weight_decay: 0.0001
-  epochs: 50
+  epochs: 40
+  patience: 8          # stop after this many epochs without a validation improvement
+  lr_patience: 3       # halve the learning rate after this many epochs without improvement
 
 seed: 42
