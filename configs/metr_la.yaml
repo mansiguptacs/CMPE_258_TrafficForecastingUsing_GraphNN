@@ -34,6 +34,11 @@ normalization:
   # METR-LA encodes missing readings as 0; they are excluded when fitting mean/std.
   missing_value: 0.0
 
+missing:
+  # Model inputs: forward-fill per sensor (past values only). Targets are never imputed;
+  # missing targets are masked out of losses and metrics.
+  input_imputation: ffill
+
 graph:
   adjacency: distance     # distance | correlation
   correlation_top_k: 10   # used only when adjacency == correlation
