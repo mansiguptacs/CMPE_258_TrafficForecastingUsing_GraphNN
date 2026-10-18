@@ -1,0 +1,25 @@
+# Cursor / editor
+.cursor/
+.vscode/
+.idea/
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data and artifacts (shared via Google Drive, not git)
+data/
+checkpoints/
+*.h5
+*.pkl
+*.npz
+*.pt
+*.ckpt
+runs/

@@ -1,0 +1,41 @@
+# Shared experiment settings for METR-LA. Every model (HA, LSTM, DCRNN, STGCN)
+# must read splits, horizons and normalization from this file so results are comparable.
+
+dataset:
+  name: METR-LA
+  num_nodes: 207
+  interval_minutes: 5
+
+paths:
+  # Resolution order: $TRAFFIC_DATA_ROOT, then colab_root (on Colab), then local_root.
+  # On Colab, add the shared team Drive folder to "My Drive" (Add shortcut) so this path exists.
+  colab_root: /content/drive/My Drive/258_DeepLearning/project_dataset
+  local_root: data
+  raw_dir: raw
+  processed_dir: processed
+  speed_file: metr-la.h5
+  adjacency_file: adj_mx.pkl
+
+windows:
+  input_len: 12           # 12 x 5 min = 60 min of history
+  horizons: [3, 6, 12]    # 15, 30, 60 min ahead
+  output_len: 12          # models predict all 12 steps; metrics reported at horizons above
+
+split:
+  # Chronological, no shuffling.
+  train: 0.7
+  val: 0.1
+  test: 0.2
+
+normalization:
+  method: zscore
+  per_sensor: true
+  fit_on: train
+  # METR-LA encodes missing readings as 0; they are excluded when fitting mean/std.
+  missing_value: 0.0
+
+graph:
+  adjacency: distance     # distance | correlation
+  correlation_top_k: 10   # used only when adjacency == correlation
+
+seed: 42
