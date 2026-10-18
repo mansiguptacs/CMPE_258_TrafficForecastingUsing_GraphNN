@@ -43,4 +43,14 @@ graph:
   adjacency: distance     # distance | correlation
   correlation_top_k: 10   # used only when adjacency == correlation
 
+stgcn:
+  blocks: [[1, 32, 64], [64, 32, 128]]   # (in, spatial, out) channels per ST-Conv block
+  kt: 3                                  # temporal kernel size
+  ks: 3                                  # Chebyshev polynomial order
+  dropout: 0.3
+  batch_size: 64
+  lr: 0.001
+  weight_decay: 0.0001
+  epochs: 50
+
 seed: 42
