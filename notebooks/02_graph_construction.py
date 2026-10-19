@@ -350,3 +350,70 @@ plt.show()
 
 !cp data/raw/correlation_graph_heatmap.png \
 "/content/drive/MyDrive/CMPE258_TrafficForecastingUsing_GraphNN/data/raw/"
+
+distance_connections = (
+    (adj_distance > 0) |
+    (adj_distance.T > 0)
+)
+
+correlation_connections = (
+    adj_correlation > 0
+)
+
+np.fill_diagonal(distance_connections, False)
+np.fill_diagonal(correlation_connections, False)
+
+print("Distance graph connections:", distance_connections.sum())
+print("Correlation graph connections:", correlation_connections.sum())
+
+upper_triangle = np.triu(
+    np.ones(distance_connections.shape, dtype=bool),
+    k=1
+)
+
+distance_edges = distance_connections & upper_triangle
+correlation_edges = correlation_connections & upper_triangle
+
+shared_edges = distance_edges & correlation_edges
+union_edges = distance_edges | correlation_edges
+
+print("Unique distance edges:", distance_edges.sum())
+print("Unique correlation edges:", correlation_edges.sum())
+print("Shared edges:", shared_edges.sum())
+print("Union edges:", union_edges.sum())
+
+overlap_percentage = (
+    shared_edges.sum() / union_edges.sum()
+) * 100
+
+print("Jaccard edge overlap:", round(overlap_percentage, 2), "%")
+
+graph_comparison = {
+    "unique_distance_edges": int(distance_edges.sum()),
+    "unique_correlation_edges": int(correlation_edges.sum()),
+    "shared_edges": int(shared_edges.sum()),
+    "union_edges": int(union_edges.sum()),
+    "jaccard_overlap_percent": round(
+        float(overlap_percentage),
+        2
+    ),
+    "distance_edges_shared_percent": round(
+        float(shared_edges.sum() / distance_edges.sum() * 100),
+        2
+    ),
+    "correlation_edges_shared_percent": round(
+        float(shared_edges.sum() / correlation_edges.sum() * 100),
+        2
+    )
+}
+
+with open(
+    "data/raw/graph_comparison_metadata.json",
+    "w"
+) as f:
+    json.dump(graph_comparison, f, indent=2)
+
+print(graph_comparison)
+
+!cp data/raw/graph_comparison_metadata.json \
+"/content/drive/MyDrive/CMPE258_TrafficForecastingUsing_GraphNN/data/raw/"
