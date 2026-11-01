@@ -25,8 +25,10 @@ def pick_device() -> str:
 def build_model(cfg: dict, data: dict, device: str) -> STGCN:
     s, w = cfg["stgcn"], cfg["windows"]
     lap = torch.from_numpy(scaled_laplacian(get_adjacency(cfg, data)))
+    blocks = [list(b) for b in s["blocks"]]
+    blocks[0][0] = 2 if cfg["missing"].get("mask_channel", False) else 1
     model = STGCN(cfg["dataset"]["num_nodes"], lap, w["input_len"], w["output_len"],
-                  tuple(map(tuple, s["blocks"])), s["kt"], s["ks"], s["dropout"])
+                  tuple(map(tuple, blocks)), s["kt"], s["ks"], s["dropout"])
     return model.to(device)
 
 
@@ -111,6 +113,10 @@ def train(cfg: dict, tag: str | None = None, epochs: int | None = None) -> dict:
     results = {
         "tag": tag,
         "adjacency": cfg["graph"]["adjacency"],
+        "seed": cfg["seed"],
+        "input_imputation": cfg["missing"]["input_imputation"],
+        "mask_channel": cfg["missing"].get("mask_channel", False),
+        "max_epochs": epochs or s["epochs"],
         "parameters": n_params,
         "device": device,
         "best_epoch": best_epoch,
@@ -134,8 +140,11 @@ if __name__ == "__main__":
     parser.add_argument("--adjacency", choices=["distance", "correlation", "identity"], default=None)
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--tag", default=None)
+    parser.add_argument("--seed", type=int, default=None)
     args = parser.parse_args()
     cfg = load_config()
     if args.adjacency:
         cfg["graph"]["adjacency"] = args.adjacency
+    if args.seed is not None:
+        cfg["seed"] = args.seed
     train(cfg, tag=args.tag, epochs=args.epochs)

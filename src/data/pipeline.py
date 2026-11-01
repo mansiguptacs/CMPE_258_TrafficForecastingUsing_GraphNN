@@ -77,12 +77,36 @@ def load_processed(cfg: dict) -> dict:
     return data
 
 
+def model_inputs(cfg: dict, data: dict, observed: np.ndarray | None = None) -> np.ndarray:
+    """Normalized model inputs [T, N, C] for cfg['missing'].
+
+    input_imputation: 'ffill' (last real reading) or 'mean' (the sensor's train mean, i.e. 0 after scaling).
+    mask_channel: if true, a second channel holds 1 for real readings and 0 for filled ones.
+    `observed` overrides the native mask, e.g. to simulate extra failures at evaluation time.
+    """
+    m = cfg["missing"]
+    scaler = data["scaler"]
+    native = observed is None
+    observed = data["observed"] if native else observed
+    if m["input_imputation"] == "ffill":
+        filled = data["inputs"] if native else scaler.transform(impute_ffill(data["speeds"], observed, scaler.mean))
+    elif m["input_imputation"] == "mean":
+        filled = np.where(observed, scaler.transform(data["speeds"]), 0.0).astype(np.float32)
+    else:
+        raise ValueError(f"unknown input_imputation {m['input_imputation']!r}")
+    channels = [filled]
+    if m.get("mask_channel", False):
+        channels.append(observed.astype(np.float32))
+    return np.stack(channels, axis=-1)
+
+
 def make_datasets(cfg: dict, data: dict | None = None) -> dict:
     data = data or load_processed(cfg)
     w = cfg["windows"]
+    inputs = model_inputs(cfg, data)
     return {
         split: TrafficWindowDataset(
-            data["inputs"], data["speeds"], data["observed"], a, b, w["input_len"], w["output_len"]
+            inputs, data["speeds"], data["observed"], a, b, w["input_len"], w["output_len"]
         )
         for split, (a, b) in data["meta"]["split_index"].items()
     }
