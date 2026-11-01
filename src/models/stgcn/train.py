@@ -111,6 +111,8 @@ def train(cfg: dict, tag: str | None = None, epochs: int | None = None) -> dict:
     results = {
         "tag": tag,
         "adjacency": cfg["graph"]["adjacency"],
+        "seed": cfg["seed"],
+        "max_epochs": epochs or s["epochs"],
         "parameters": n_params,
         "device": device,
         "best_epoch": best_epoch,
@@ -134,8 +136,11 @@ if __name__ == "__main__":
     parser.add_argument("--adjacency", choices=["distance", "correlation", "identity"], default=None)
     parser.add_argument("--epochs", type=int, default=None)
     parser.add_argument("--tag", default=None)
+    parser.add_argument("--seed", type=int, default=None)
     args = parser.parse_args()
     cfg = load_config()
     if args.adjacency:
         cfg["graph"]["adjacency"] = args.adjacency
+    if args.seed is not None:
+        cfg["seed"] = args.seed
     train(cfg, tag=args.tag, epochs=args.epochs)
