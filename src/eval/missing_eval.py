@@ -20,14 +20,15 @@ from src.models.stgcn.experiments import SEEDS, VARIANTS, tag_for
 from src.models.stgcn.train import build_model, pick_device, predict
 
 RATES = {"point": (0.0, 0.1, 0.2, 0.3, 0.5, 0.7), "sensor": (0.1, 0.2, 0.3, 0.5)}
-MASK_SEED = 0
+MASK_SEEDS = (0, 1, 2)
 
 
-def corrupted_test_set(cfg: dict, data: dict, rate: float, mode: str) -> tuple[TrafficWindowDataset, np.ndarray]:
+def corrupted_test_set(cfg: dict, data: dict, rate: float, mode: str,
+                       mask_seed: int = 0) -> tuple[TrafficWindowDataset, np.ndarray]:
     """Test windows whose inputs have an extra `rate` of readings hidden; also returns the hidden sensors."""
     a, b = data["meta"]["split_index"]["test"]
     observed = data["observed"].copy()
-    test_obs = apply_missing_mask(observed[a:b], rate, seed=MASK_SEED, mode=mode)
+    test_obs = apply_missing_mask(observed[a:b], rate, seed=mask_seed, mode=mode)
     hidden = np.flatnonzero(~test_obs.any(axis=0) & observed[a:b].any(axis=0)) if mode == "sensor" else None
     observed[a:b] = test_obs
     scaler = data["scaler"]
@@ -44,8 +45,10 @@ def evaluate() -> list[dict]:
     mean = torch.tensor(data["scaler"].mean, device=device)
     std = torch.tensor(data["scaler"].std, device=device)
 
-    test_sets = [(mode, rate, *corrupted_test_set(base, data, rate, mode))
-                 for mode, rates in RATES.items() for rate in rates]
+    # Rate 0 hides nothing, so one draw is enough.
+    test_sets = [(mode, rate, ms, *corrupted_test_set(base, data, rate, mode, ms))
+                 for mode, rates in RATES.items() for rate in rates
+                 for ms in (MASK_SEEDS if rate > 0 else MASK_SEEDS[:1])]
 
     rows = []
     for variant, adjacency in VARIANTS:
@@ -58,15 +61,15 @@ def evaluate() -> list[dict]:
             cfg = {**base, "graph": {**base["graph"], "adjacency": adjacency}}
             model = build_model(cfg, data, device)
             model.load_state_dict(torch.load(ckpt, map_location=device))
-            for mode, rate, ds, hidden in test_sets:
+            for mode, rate, mask_seed, ds, hidden in test_sets:
                 loader = DataLoader(ds, batch_size=base["stgcn"]["batch_size"])
                 pred, target, mask = predict(model, loader, mean, std, device)
-                row = {"variant": variant, "seed": seed, "mode": mode, "rate": rate,
+                row = {"variant": variant, "seed": seed, "mode": mode, "rate": rate, "mask_seed": mask_seed,
                        "all": horizon_metrics(pred, target, mask)}
                 if hidden is not None and len(hidden):
                     row["hidden_sensors"] = horizon_metrics(pred[..., hidden], target[..., hidden], mask[..., hidden])
                 rows.append(row)
-                print(f"{tag:24s} {mode:6s} {rate:.1f}  MAE {row['all']['average']['mae']:.3f}", flush=True)
+                print(f"{tag:24s} {mode:6s} {rate:.1f} draw {mask_seed}  MAE {row['all']['average']['mae']:.3f}", flush=True)
 
     with open(REPO_ROOT / "results" / "missing_eval.json", "w") as f:
         json.dump(rows, f, indent=2)
