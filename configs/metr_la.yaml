@@ -37,7 +37,8 @@ normalization:
 missing:
   # Model inputs: forward-fill per sensor (past values only). Targets are never imputed;
   # missing targets are masked out of losses and metrics.
-  input_imputation: ffill
+  input_imputation: ffill   # ffill | mean (sensor's train mean)
+  mask_channel: false       # true adds a second input channel: 1 = real reading, 0 = filled
 
 graph:
   adjacency: distance     # distance | correlation | identity (no edges, for the no-graph ablation)

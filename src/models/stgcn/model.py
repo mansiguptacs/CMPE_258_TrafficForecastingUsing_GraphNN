@@ -79,7 +79,7 @@ class STGCN(nn.Module):
         )
 
     def forward(self, x):
-        """x: [batch, input_len, nodes, 1] normalized speeds -> [batch, output_len, nodes] normalized."""
+        """x: [batch, input_len, nodes, channels] normalized inputs -> [batch, output_len, nodes] normalized."""
         x = x.permute(0, 3, 1, 2)
         for block in self.blocks:
             x = block(x)
