@@ -7,13 +7,15 @@ class TrafficWindowDataset(Dataset):
     """Sliding windows over one split.
 
     Each item is (x, y, y_mask):
-      x      [input_len, N, 1]  normalized, imputed speeds
+      x      [input_len, N, C]  normalized, imputed speeds (C=1), plus a missing indicator if C=2
       y      [output_len, N]    raw speeds in mph (targets stay unnormalized for metrics)
       y_mask [output_len, N]    True where the target reading is real
     """
 
     def __init__(self, inputs: np.ndarray, targets: np.ndarray, observed: np.ndarray,
                  start: int, end: int, input_len: int, output_len: int):
+        if inputs.ndim == 2:
+            inputs = inputs[..., None]
         self.inputs = torch.from_numpy(inputs[start:end])
         self.targets = torch.from_numpy(targets[start:end])
         self.observed = torch.from_numpy(observed[start:end])
@@ -29,4 +31,4 @@ class TrafficWindowDataset(Dataset):
     def __getitem__(self, i: int):
         j = i + self.input_len
         k = j + self.output_len
-        return self.inputs[i:j].unsqueeze(-1), self.targets[j:k], self.observed[j:k]
+        return self.inputs[i:j], self.targets[j:k], self.observed[j:k]
