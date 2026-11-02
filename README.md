@@ -56,7 +56,7 @@ python -m src.data.pipeline        # writes data/processed/
 jupyter notebook notebooks/        # open the required notebook
 ```
 
-To run on Google Colab: add a shortcut to the shared Drive folder in My Drive named `CMPE258_TrafficGNN` (with `raw/` inside it), open a notebook from GitHub in Colab, and run all cells. The first cell mounts Drive, clones this repository and installs the extra packages. Use a GPU runtime for model notebooks.
+To run on Google Colab: add a shortcut to the shared Drive folder in My Drive named `CMPE258_TrafficGNN`, containing `data/raw/` with `metr-la.h5` and `adj_mx.pkl`. Open a notebook from GitHub in Colab and run all cells. Use a GPU runtime for model notebooks.
 
 ## Current Project Status
 
@@ -72,3 +72,35 @@ The repository now includes:
 - Saved metrics and training-history files under `results/`
 
 Historical-average and LSTM baselines are still planned or under development.
+
+## Updates Since the Original Proposal
+
+The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The historical-average and LSTM baselines remain under development.
+
+## Preliminary Experimental Results
+
+The STGCN models were evaluated at 15-, 30- and 60-minute forecasting horizons using MAE, RMSE and MAPE. Results were averaged across random seeds 42, 43 and 44.
+
+| Graph variant | 15-minute MAE | 30-minute MAE | 60-minute MAE |
+|---|---:|---:|---:|
+| Distance-based graph | 2.799 | 3.223 | 3.737 |
+| Correlation-based graph | 2.808 | 3.220 | 3.738 |
+| No graph connections | 2.948 | 3.450 | 3.998 |
+
+The distance-based and correlation-based graph models performed better than the no-graph model. The performance difference was more noticeable at the 60-minute horizon, showing that spatial relationships between traffic sensors are useful for longer-term forecasting.
+
+Additional experiments evaluated model performance under missing sensor readings and compared different imputation strategies. Detailed metrics and training histories are stored in the `results/` directory.
+
+## Team Contributions Through Check-in 3
+
+- **Lavya Sri Bonagiri:** For this check-in, she updated and organized the project documentation for Check-in 3. Her work included updating the README with the project status, repository instructions, preliminary experimental results, project updates and team contribution information. She also helped organize the written project documentation for submission.
+
+- **Mansi Gupta:** Implemented and organized the data-preprocessing pipeline, including chronological train/validation/test splitting, normalization, sliding-window preparation, missing-value handling and dataset preparation for model training. She also implemented and trained the STGCN model, conducted distance-based, correlation-based and no-graph comparisons, ran multi-seed experiments using seeds 42, 43, and 44, and contributed to missing-data and imputation experiments.
+
+- **Megha Gangal:** Worked on traffic-sensor graph construction, including distance-based and correlation-based graphs. She implemented and trained the DCRNN model using the distance-based sensor graph and contributed to model evaluation, training experiments and comparison of graph-based forecasting approaches. She also contributed to evaluation utilities and preliminary-result analysis.
+
+- **All team members:** Contributed to project discussions, report coordination, code review, final documentation and presentation preparation.
+
+- ## Future Work
+
+The team plans to implement and evaluate the historical-average and LSTM baseline models. These models will be compared with STGCN and DCRNN using the same forecasting horizons and evaluation metrics.
