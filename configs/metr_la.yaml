@@ -8,8 +8,10 @@ dataset:
 
 paths:
   # Resolution order: $TRAFFIC_DATA_ROOT, then colab_root (on Colab), then local_root.
-  # On Colab, add the shared team Drive folder to "My Drive" (Add shortcut) so this path exists.
-  colab_root: /content/drive/My Drive/258_DeepLearning/project_dataset
+  # On Colab, add the shared team Drive folder to "My Drive" as a shortcut named
+  # CMPE258_TrafficGNN so this path exists. Otherwise set $TRAFFIC_DATA_ROOT to the folder
+  # that holds raw/ and processed/.
+  colab_root: /content/drive/MyDrive/CMPE258_TrafficGNN/data
   local_root: data
   raw_dir: raw
   processed_dir: processed

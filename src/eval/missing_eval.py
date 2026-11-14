@@ -1,4 +1,5 @@
 """Robustness to missing inputs: hide extra test readings, re-impute, and score the trained STGCNs.
+Other models run the same test through src.eval.masked_inputs.
 
 Only the model inputs are corrupted. Targets and their masks stay the original real readings, so every
 rate is scored on exactly the same values. Each model re-fills the hidden readings its own way
@@ -13,25 +14,12 @@ import torch
 from torch.utils.data import DataLoader
 
 from src.config import REPO_ROOT, load_config
-from src.data.missing import apply_missing_mask
 from src.data.pipeline import load_processed, model_inputs
 from src.data.windows import TrafficWindowDataset
+from src.eval.masked_inputs import corrupted_observed, mask_settings
 from src.eval.metrics import horizon_metrics
 from src.models.stgcn.experiments import config_for, runs
 from src.models.stgcn.train import build_model, pick_device, predict
-
-RATES = {"point": (0.0, 0.1, 0.2, 0.3, 0.5, 0.7), "sensor": (0.1, 0.2, 0.3, 0.5)}
-MASK_SEEDS = (0, 1, 2)
-
-
-def corrupted_observed(data: dict, rate: float, mode: str, mask_seed: int = 0) -> tuple[np.ndarray, np.ndarray]:
-    """Observed mask with an extra `rate` of test readings hidden; also returns the fully hidden sensors."""
-    a, b = data["meta"]["split_index"]["test"]
-    observed = data["observed"].copy()
-    test_obs = apply_missing_mask(observed[a:b], rate, seed=mask_seed, mode=mode)
-    hidden = np.flatnonzero(~test_obs.any(axis=0) & observed[a:b].any(axis=0)) if mode == "sensor" else None
-    observed[a:b] = test_obs
-    return observed, hidden
 
 
 def corrupted_test_set(cfg: dict, data: dict, observed: np.ndarray) -> TrafficWindowDataset:
@@ -48,10 +36,7 @@ def evaluate() -> list[dict]:
     mean = torch.tensor(data["scaler"].mean, device=device)
     std = torch.tensor(data["scaler"].std, device=device)
 
-    # Rate 0 hides nothing, so one draw is enough.
-    masks = [(mode, rate, ms, *corrupted_observed(data, rate, mode, ms))
-             for mode, rates in RATES.items() for rate in rates
-             for ms in (MASK_SEEDS if rate > 0 else MASK_SEEDS[:1])]
+    masks = [(mode, rate, ms, *corrupted_observed(data, rate, mode, ms)) for mode, rate, ms in mask_settings()]
 
     rows = []
     for variant, seed, tag in runs():
