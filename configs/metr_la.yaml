@@ -41,6 +41,9 @@ missing:
   # missing targets are masked out of losses and metrics.
   input_imputation: ffill   # ffill | mean (sensor's train mean)
   mask_channel: false       # true adds a second input channel: 1 = real reading, 0 = filled
+  # Hide extra training inputs in every batch (null = off), e.g.
+  # {point_max: 0.5, sensor_prob: 0.5, sensor_max: 0.5}; see src/data/augment.py.
+  train_mask: null
 
 graph:
   adjacency: distance     # distance | correlation | identity (no edges, for the no-graph ablation)
