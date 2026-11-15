@@ -1,7 +1,8 @@
-"""Check-in 3 STGCN runs, then a mean +/- std summary over seeds.
+"""STGCN runs, then a mean +/- std summary over seeds.
 
 Graph study: distance, correlation and no-graph variants, three seeds each.
 Imputation study: distance graph with other ways of filling missing inputs, seed 42.
+Masked training: extra inputs hidden in every training batch, three seeds.
 
     python -m src.models.stgcn.experiments run       # trains every run that has no metrics.json yet
     python -m src.models.stgcn.experiments summary   # writes results/stgcn_summary.json and prints the table
@@ -18,14 +19,17 @@ from src.models.stgcn.train import train
 SEEDS = (42, 43, 44)
 MAX_EPOCHS = 80  # early stopping decides the real length; the cap only has to be high enough not to cut runs off
 
-# variant -> (adjacency, input_imputation, mask_channel, seeds)
+TRAIN_MASK = {"point_max": 0.5, "sensor_prob": 0.5, "sensor_max": 0.5}
+
+# variant -> (adjacency, input_imputation, mask_channel, train_mask, seeds)
 VARIANTS = {
-    "distance": ("distance", "ffill", False, SEEDS),
-    "correlation": ("correlation", "ffill", False, SEEDS),
-    "no_graph": ("identity", "ffill", False, SEEDS),
-    "distance_ffill_mask": ("distance", "ffill", True, (42,)),
-    "distance_mean": ("distance", "mean", False, (42,)),
-    "distance_mean_mask": ("distance", "mean", True, (42,)),
+    "distance": ("distance", "ffill", False, None, SEEDS),
+    "correlation": ("correlation", "ffill", False, None, SEEDS),
+    "no_graph": ("identity", "ffill", False, None, SEEDS),
+    "distance_ffill_mask": ("distance", "ffill", True, None, (42,)),
+    "distance_mean": ("distance", "mean", False, None, (42,)),
+    "distance_mean_mask": ("distance", "mean", True, None, (42,)),
+    "distance_mean_mask_aug": ("distance", "mean", True, TRAIN_MASK, SEEDS),
 }
 
 # stgcn_distance (seed 42) stopped early at epoch 38, so it is reused as-is. The Check-in 2
@@ -38,18 +42,19 @@ def tag_for(variant: str, seed: int) -> str:
 
 
 def config_for(base: dict, variant: str, seed: int) -> dict:
-    adjacency, imputation, mask_channel, _ = VARIANTS[variant]
+    adjacency, imputation, mask_channel, train_mask, _ = VARIANTS[variant]
     cfg = copy.deepcopy(base)
     cfg["graph"]["adjacency"] = adjacency
     cfg["missing"]["input_imputation"] = imputation
     cfg["missing"]["mask_channel"] = mask_channel
+    cfg["missing"]["train_mask"] = train_mask
     cfg["seed"] = seed
     return cfg
 
 
 def runs() -> list[tuple[str, int, str]]:
     """Seed-major order, so a full first pass over all variants finishes before extra seeds."""
-    return [(v, seed, tag_for(v, seed)) for seed in SEEDS for v, spec in VARIANTS.items() if seed in spec[3]]
+    return [(v, seed, tag_for(v, seed)) for seed in SEEDS for v, spec in VARIANTS.items() if seed in spec[-1]]
 
 
 def run_all() -> None:
@@ -69,7 +74,7 @@ def summarize() -> dict:
     summary = {}
     for variant, spec in VARIANTS.items():
         found = []
-        for seed in spec[3]:
+        for seed in spec[-1]:
             path = REPO_ROOT / "results" / tag_for(variant, seed) / "metrics.json"
             if path.exists():
                 with open(path) as f:

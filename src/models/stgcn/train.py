@@ -7,6 +7,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from src.config import REPO_ROOT, load_config
+from src.data.augment import hide_inputs, sample_drop
 from src.data.pipeline import load_processed, make_datasets
 from src.eval.metrics import horizon_metrics
 from src.models.losses import masked_mae
@@ -71,8 +72,11 @@ def train(cfg: dict, tag: str | None = None, epochs: int | None = None) -> dict:
 
     opt = torch.optim.Adam(model.parameters(), lr=s["lr"], weight_decay=s["weight_decay"])
     sched = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, factor=0.5, patience=s["lr_patience"])
+    train_mask = cfg["missing"].get("train_mask")
+    imputation = cfg["missing"]["input_imputation"]
     n_params = sum(p.numel() for p in model.parameters())
-    print(f"[{tag}] device={device} params={n_params:,} train_windows={len(datasets['train'])}", flush=True)
+    print(f"[{tag}] device={device} params={n_params:,} train_windows={len(datasets['train'])}"
+          f"{f' train_mask={train_mask}' if train_mask else ''}", flush=True)
 
     history, best_val, best_epoch, stale = [], float("inf"), 0, 0
     best_path = ckpt_dir / "best.pt"
@@ -82,6 +86,8 @@ def train(cfg: dict, tag: str | None = None, epochs: int | None = None) -> dict:
         t0, losses = time.time(), []
         for x, y, y_mask in train_loader:
             x, y, y_mask = x.to(device), y.to(device), y_mask.to(device)
+            if train_mask:
+                x = hide_inputs(x, sample_drop(x.shape[:3], train_mask, device), imputation)
             loss = masked_mae(model(x) * std + mean, y, y_mask)
             opt.zero_grad()
             loss.backward()
@@ -116,6 +122,7 @@ def train(cfg: dict, tag: str | None = None, epochs: int | None = None) -> dict:
         "seed": cfg["seed"],
         "input_imputation": cfg["missing"]["input_imputation"],
         "mask_channel": cfg["missing"].get("mask_channel", False),
+        "train_mask": train_mask,
         "max_epochs": epochs or s["epochs"],
         "parameters": n_params,
         "device": device,

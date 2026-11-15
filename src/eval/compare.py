@@ -23,8 +23,8 @@ HORIZONS = (3, 6, 12)
 
 
 def _seed_runs(prefix: str) -> list[str]:
-    """`prefix` itself and any `prefix_s<seed>` runs that have saved predictions."""
-    pattern = re.compile(rf"{re.escape(prefix)}(_s\d+)?")
+    """`prefix` itself and any `prefix_s<seed>` / `prefix_seed<seed>` runs that have saved predictions."""
+    pattern = re.compile(rf"{re.escape(prefix)}(_s\d+|_seed\d+)?")
     return sorted(p.name for p in RESULTS.glob(f"{prefix}*")
                   if pattern.fullmatch(p.name) and (p / "test_predictions.npz").exists())
 
@@ -39,10 +39,12 @@ MODELS = {
     "STGCN, distance graph": [tag_for("distance", s) for s in SEEDS],
     "STGCN, correlation graph": [tag_for("correlation", s) for s in SEEDS],
     "STGCN, no graph": [tag_for("no_graph", s) for s in SEEDS],
+    "STGCN, distance graph, masked training": [tag_for("distance_mean_mask_aug", s) for s in SEEDS],
 }
 INPUT_FREE = {"Historical average"}
 STGCN_VARIANT = {"STGCN, distance graph": "distance", "STGCN, correlation graph": "correlation",
-                 "STGCN, no graph": "no_graph"}
+                 "STGCN, no graph": "no_graph",
+                 "STGCN, distance graph, masked training": "distance_mean_mask_aug"}
 
 
 def load_predictions(tag: str) -> np.ndarray | None:
@@ -140,26 +142,26 @@ def print_comparison(summary: dict) -> None:
         return f"{d['mean']:.3f} ± {d['std']:.3f}" if d["std"] else f"{d['mean']:.3f}"
 
     print("\nTest MAE (mph), mean ± std over seeds")
-    print(f"{'model':26s} {'runs':>4s}  " + "  ".join(f"{h:>13s}" for h in ("15min", "30min", "60min", "average")))
+    print(f"{'model':40s} {'runs':>4s}  " + "  ".join(f"{h:>13s}" for h in ("15min", "30min", "60min", "average")))
     for name, s in summary.items():
-        print(f"{name:26s} {len(s['runs']):>4d}  "
+        print(f"{name:40s} {len(s['runs']):>4d}  "
               + "  ".join(f"{cell(s['test'][h]['mae']):>13s}" for h in ("15min", "30min", "60min", "average")))
 
     print(f"\nTest MAE (mph) by traffic state: congested (< {CONGESTED_MPH} mph) / free flow")
-    print(f"{'model':26s}  " + "  ".join(f"{h:>13s}" for h in ("15min", "30min", "60min")))
+    print(f"{'model':40s}  " + "  ".join(f"{h:>13s}" for h in ("15min", "30min", "60min")))
     for name, s in summary.items():
         ts = s["traffic_state"]
-        print(f"{name:26s}  " + "  ".join(
+        print(f"{name:40s}  " + "  ".join(
             f"{ts[h]['congested']['mean']:>6.2f} / {ts[h]['free_flow']['mean']:<4.2f}" for h in ("15min", "30min", "60min")))
 
     print("\nMissing inputs: average MAE (mph), all sensors | hidden sensors only")
     for name, s in summary.items():
         if not s["missing"]:
-            print(f"{name:26s}  not run yet")
+            print(f"{name:40s}  not run yet")
             continue
         cells = [f"{r['mode'][0]}{r['rate']:.1f}: {r['mae_all']:.2f}"
                  + (f"|{r['mae_hidden_sensors']:.2f}" if "mae_hidden_sensors" in r else "") for r in s["missing"]]
-        print(f"{name:26s}  " + "  ".join(cells))
+        print(f"{name:40s}  " + "  ".join(cells))
 
 
 if __name__ == "__main__":

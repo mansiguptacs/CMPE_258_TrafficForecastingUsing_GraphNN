@@ -5,7 +5,7 @@ Only the model inputs are corrupted. Targets and their masks stay the original r
 rate is scored on exactly the same values. Each model re-fills the hidden readings its own way
 (forward-fill or mean, with or without the missing-indicator channel).
 
-    python -m src.eval.missing_eval     # writes results/missing_eval.json
+    python -m src.eval.missing_eval     # adds runs not yet in results/missing_eval.json
 """
 import json
 
@@ -38,8 +38,12 @@ def evaluate() -> list[dict]:
 
     masks = [(mode, rate, ms, *corrupted_observed(data, rate, mode, ms)) for mode, rate, ms in mask_settings()]
 
-    rows = []
+    out = REPO_ROOT / "results" / "missing_eval.json"
+    rows = json.loads(out.read_text()) if out.exists() else []
+    done = {(r["variant"], r["seed"]) for r in rows}
     for variant, seed, tag in runs():
+        if (variant, seed) in done:
+            continue
         ckpt = REPO_ROOT / "checkpoints" / tag / "best.pt"
         if not ckpt.exists():
             print(f"skip {tag}: no checkpoint", flush=True)
@@ -57,8 +61,8 @@ def evaluate() -> list[dict]:
             rows.append(row)
             print(f"{tag:32s} {mode:6s} {rate:.1f} draw {mask_seed}  MAE {row['all']['average']['mae']:.3f}", flush=True)
 
-    with open(REPO_ROOT / "results" / "missing_eval.json", "w") as f:
-        json.dump(rows, f, indent=2)
+        with open(out, "w") as f:
+            json.dump(rows, f, indent=2)
     return rows
 
 
