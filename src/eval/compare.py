@@ -3,7 +3,8 @@
 Each run saves results/<tag>/test_predictions.npz with key "pred": test forecasts in mph,
 shaped [6832, 12, 207] (windows in time order, all 12 steps, sensors in METR-LA column order).
 Runs that also did the missing-data test save results/<tag>/missing_eval.json (src.eval.masked_inputs).
-Models with no saved runs yet are skipped.
+Models without saved predictions fall back to their runs' metrics.json ({"15_min": {"MAE", "RMSE",
+"MAPE"}, ...}), which gives only the accuracy table. Models with neither are skipped.
 
     python -m src.eval.compare     # writes results/comparison.json and prints the tables
 """
@@ -43,6 +44,8 @@ MODELS = {
     "STGCN, correlation graph, masked training": [tag_for("correlation_mean_mask_aug", s) for s in SEEDS],
     "STGCN, no graph, masked training": [tag_for("no_graph_mean_mask_aug", s) for s in SEEDS],
 }
+METRICS_FALLBACK = {"Historical average": "ha", "LSTM": "lstm",
+                    "DCRNN, distance graph": "dcrnn_distance", "DCRNN, correlation graph": "dcrnn_correlation"}
 INPUT_FREE = {"Historical average"}
 STGCN_VARIANT = {"STGCN, distance graph": "distance", "STGCN, correlation graph": "correlation",
                  "STGCN, no graph": "no_graph",
@@ -79,6 +82,23 @@ def sensor_mae(pred: np.ndarray, target: np.ndarray, mask: np.ndarray) -> np.nda
 
 def _mean_std(vals: list[float]) -> dict:
     return {"mean": float(np.mean(vals)), "std": float(np.std(vals, ddof=1)) if len(vals) > 1 else 0.0}
+
+
+def _metrics_only(prefix: str) -> dict | None:
+    """Accuracy summary from metrics.json files, preferring per-seed runs over an unseeded one."""
+    pattern = re.compile(rf"{re.escape(prefix)}(_s\d+|_seed\d+)?")
+    runs = sorted(p for p in RESULTS.glob(f"{prefix}*")
+                  if pattern.fullmatch(p.name) and (p / "metrics.json").exists())
+    runs = [p for p in runs if p.name != prefix] or runs
+    if not runs:
+        return None
+    metrics = [json.loads((p / "metrics.json").read_text()) for p in runs]
+    return {
+        "runs": [p.name for p in runs],
+        "source": "metrics.json (no saved predictions)",
+        "test": {f"{h * 5}min": {k.lower(): _mean_std([m[f"{h * 5}_min"][k] for m in metrics])
+                                 for k in ("MAE", "RMSE", "MAPE")} for h in HORIZONS},
+    }
 
 
 def _missing_rows(name: str, tag: str, pred: np.ndarray) -> list[dict]:
@@ -119,7 +139,11 @@ def compare() -> dict:
     for name, tags in MODELS.items():
         found = [(tag, p) for tag in tags if (p := load_predictions(tag)) is not None]
         if not found:
-            print(f"skip {name}: no saved predictions", flush=True)
+            fallback = _metrics_only(METRICS_FALLBACK[name]) if name in METRICS_FALLBACK else None
+            if fallback:
+                summary[name] = fallback
+            else:
+                print(f"skip {name}: no saved predictions", flush=True)
             continue
         for tag, p in found:
             if p.shape != target.shape:
@@ -143,24 +167,29 @@ def compare() -> dict:
 
 def print_comparison(summary: dict) -> None:
     def cell(d):
+        if d is None:
+            return "-"
         return f"{d['mean']:.3f} ± {d['std']:.3f}" if d["std"] else f"{d['mean']:.3f}"
 
-    print("\nTest MAE (mph), mean ± std over seeds")
+    print("\nTest MAE (mph), mean ± std over seeds (* = from metrics.json, no saved predictions)")
     print(f"{'model':42s} {'runs':>4s}  " + "  ".join(f"{h:>13s}" for h in ("15min", "30min", "60min", "average")))
     for name, s in summary.items():
-        print(f"{name:42s} {len(s['runs']):>4d}  "
-              + "  ".join(f"{cell(s['test'][h]['mae']):>13s}" for h in ("15min", "30min", "60min", "average")))
+        label = name + (" *" if "source" in s else "")
+        print(f"{label:42s} {len(s['runs']):>4d}  " + "  ".join(
+            f"{cell(s['test'].get(h, {}).get('mae')):>13s}" for h in ("15min", "30min", "60min", "average")))
 
     print(f"\nTest MAE (mph) by traffic state: congested (< {CONGESTED_MPH} mph) / free flow")
     print(f"{'model':42s}  " + "  ".join(f"{h:>13s}" for h in ("15min", "30min", "60min")))
     for name, s in summary.items():
+        if "traffic_state" not in s:
+            continue
         ts = s["traffic_state"]
         print(f"{name:42s}  " + "  ".join(
             f"{ts[h]['congested']['mean']:>6.2f} / {ts[h]['free_flow']['mean']:<4.2f}" for h in ("15min", "30min", "60min")))
 
     print("\nMissing inputs: average MAE (mph), all sensors | hidden sensors only")
     for name, s in summary.items():
-        if not s["missing"]:
+        if not s.get("missing"):
             print(f"{name:42s}  not run yet")
             continue
         cells = [f"{r['mode'][0]}{r['rate']:.1f}: {r['mae_all']:.2f}"

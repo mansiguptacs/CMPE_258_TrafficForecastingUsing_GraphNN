@@ -35,6 +35,7 @@ Repository layout:
 | `notebooks/03_train_stgcn.ipynb` | STGCN training, graph ablation, multi-seed, missing-data, hidden-input training and hyperparameter-search results |
 | `notebooks/03_train_dcrnn.ipynb` | DCRNN implementation and evaluation on the distance-based graph |
 | `notebooks/04_train_dcrnn_correlation.ipynb`, `notebooks/04_dcrnn_multiseed_correlation.ipynb` | DCRNN on the correlation-based graph, single and multi-seed |
+| `notebooks/04_dcrnn_multiseed_distance.ipynb` | DCRNN on the distance-based graph, multi-seed |
 | `notebooks/04_initial_data_exploration.ipynb` | Initial METR-LA data exploration and visualizations |
 | `results/` | Model metrics, training histories, multi-seed summaries, missing-data results and the cross-model comparison |
 
@@ -77,6 +78,8 @@ Every model is compared on the same test windows by `src/eval/compare.py`. For a
 np.savez_compressed(f"results/{tag}/test_predictions.npz", pred=pred_mph.astype(np.float32))
 ```
 
+A run without saved predictions but with a `metrics.json` in the DCRNN format (`{"15_min": {"MAE": ..., "RMSE": ..., "MAPE": ...}, ...}`) still appears in the accuracy table.
+
 Models that read recent speeds (LSTM, DCRNN) should also run the shared missing-data test, which hides exactly the same readings for every model:
 
 ```python
@@ -98,7 +101,7 @@ The repository now includes:
 - Distance-based and correlation-based sensor-graph construction
 - STGCN training with distance, correlation, and no-graph variants
 - Multi-seed experiments using seeds 42, 43, and 44
-- DCRNN training and evaluation on the distance-based graph, and on the correlation-based graph with three seeds
+- DCRNN training and evaluation on the distance-based and correlation-based graphs, three seeds each
 - Missing-data robustness experiments with different masking and imputation strategies
 - STGCN trained with hidden inputs (the final STGCN), for all three graph variants with three seeds
 - A hyperparameter search for STGCN, judged on validation error
@@ -138,7 +141,7 @@ The final STGCN fills missing inputs with the training mean plus a missing-indic
 
 Training with hidden inputs lowers the normal test error by 3–4% and cuts the error on switched-off sensors from 5.1–6.4 mph to about 3.3–3.5 mph. A hyperparameter search over seven single changes (`results/stgcn_tuning.json`) found nothing better than the original settings by more than 0.01 mph on validation.
 
-DCRNN on the correlation-based graph (three seeds, 10 epochs each) reaches 2.94, 3.49 and 4.32 mph MAE at 15, 30 and 60 minutes, slightly better than on the distance-based graph (2.95, 3.52 and 4.40).
+DCRNN, trained for 10 epochs per run with seeds 42, 123 and 2024, reaches 2.94, 3.49 and 4.32 mph MAE at 15, 30 and 60 minutes on the correlation-based graph, slightly better than on the distance-based graph (2.96, 3.55 and 4.45). Both graph models therefore do slightly better with the correlation-based graph. DCRNN predictions are not saved yet, so `compare.py` reads its accuracy from each run's `metrics.json`, and DCRNN is not yet in the traffic-state and missing-data comparisons.
 
 ## Team Contributions Through Check-in 3
 
@@ -146,7 +149,7 @@ DCRNN on the correlation-based graph (three seeds, 10 epochs each) reaches 2.94,
 
 - **Mansi Gupta:** Implemented and organized the data-preprocessing pipeline, including chronological train/validation/test splitting, normalization, sliding-window preparation, missing-value handling and dataset preparation for model training. She also implemented and trained the STGCN model, conducted distance-based, correlation-based and no-graph comparisons, ran multi-seed experiments using seeds 42, 43, and 44, and contributed to missing-data and imputation experiments.
 
-- **Megha Gangal:** Worked on traffic-sensor graph construction, including distance-based and correlation-based graphs. She implemented and trained the DCRNN model using the distance-based sensor graph and contributed to model evaluation, training experiments and comparison of graph-based forecasting approaches. She also contributed to evaluation utilities and preliminary-result analysis.
+- **Megha Gangal:** Worked on traffic-sensor graph construction, including distance-based and correlation-based graphs. She implemented and trained the DCRNN model on the distance-based and correlation-based graphs, three seeds each, and contributed to model evaluation, training experiments and comparison of graph-based forecasting approaches. She also contributed to evaluation utilities and preliminary-result analysis.
 
 - **All team members:** Contributed to project discussions, report coordination, code review, final documentation and presentation preparation.
 
