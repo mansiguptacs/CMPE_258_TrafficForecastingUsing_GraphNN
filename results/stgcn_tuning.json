@@ -1,0 +1,99 @@
+[
+  {
+    "setting": "base",
+    "change": {},
+    "val_mae": 2.789100170135498,
+    "test_mae": 3.109025001525879,
+    "best_epoch": 42,
+    "parameters": 346636,
+    "train_minutes": 34.530368999640146
+  },
+  {
+    "setting": "dropout0.1",
+    "change": {
+      "dropout": 0.1
+    },
+    "val_mae": 2.7879416942596436,
+    "test_mae": 3.0543646812438965,
+    "best_epoch": 42,
+    "parameters": 346636,
+    "train_minutes": 34.332124849160515
+  },
+  {
+    "setting": "dropout0.5",
+    "change": {
+      "dropout": 0.5
+    },
+    "val_mae": 2.7925281524658203,
+    "test_mae": 3.075803756713867,
+    "best_epoch": 36,
+    "parameters": 346636,
+    "train_minutes": 30.04931172927221
+  },
+  {
+    "setting": "wide",
+    "change": {
+      "blocks": [
+        [
+          1,
+          64,
+          128
+        ],
+        [
+          128,
+          64,
+          256
+        ]
+      ]
+    },
+    "val_mae": 2.7857441902160645,
+    "test_mae": 3.0673861503601074,
+    "best_epoch": 29,
+    "parameters": 1115148,
+    "train_minutes": 39.73022041320801
+  },
+  {
+    "setting": "lr0.002",
+    "change": {
+      "lr": 0.002
+    },
+    "val_mae": 2.7803738117218018,
+    "test_mae": 3.0774691104888916,
+    "best_epoch": 42,
+    "parameters": 346636,
+    "train_minutes": 34.24130608240763
+  },
+  {
+    "setting": "lr0.0005",
+    "change": {
+      "lr": 0.0005
+    },
+    "val_mae": 2.80200457572937,
+    "test_mae": 3.1085782051086426,
+    "best_epoch": 63,
+    "parameters": 346636,
+    "train_minutes": 48.57905988295873
+  },
+  {
+    "setting": "ks2",
+    "change": {
+      "ks": 2
+    },
+    "val_mae": 2.8049561977386475,
+    "test_mae": 3.1469955444335938,
+    "best_epoch": 46,
+    "parameters": 344588,
+    "train_minutes": 35.64813377857208
+  },
+  {
+    "setting": "ks4",
+    "change": {
+      "ks": 4
+    },
+    "val_mae": 2.7802064418792725,
+    "test_mae": 3.0586094856262207,
+    "best_epoch": 53,
+    "parameters": 348684,
+    "train_minutes": 42.860199280579884
+  }
+]
