@@ -72,12 +72,13 @@ The repository now includes:
 - Missing-data robustness experiments with different masking and imputation strategies
 - Evaluation using MAE, RMSE, and MAPE at 15-, 30-, and 60-minute horizons
 - Saved metrics and training-history files under `results/`
+- LSTM baseline training and evaluation with saved metrics and prediction visualizations
 
-Historical-average and LSTM baselines are still planned or under development.
+The LSTM baseline has been trained and evaluated at 15-, 30-, and 60-minute horizons. The historical-average baseline remains planned for future work.
 
 ## Updates Since the Original Proposal
 
-The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The historical-average and LSTM baselines remain under development.
+The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The LSTM baseline was implemented and evaluated. The historical-average baseline remains planned for future work.
 
 ## Preliminary Experimental Results
 
@@ -93,10 +94,10 @@ The distance-based and correlation-based graph models performed better than the 
 
 Additional experiments evaluated model performance under missing sensor readings and compared different imputation strategies. Detailed metrics and training histories are stored in the `results/` directory.
 
-## Team Contributions Through Check-in 3
+## Team Contributions Through Check-in 4
 
-- **Lavya Sri Bonagiri:** For this check-in, she updated and organized the project documentation for Check-in 3. Her work included updating the README with the project status, repository instructions, preliminary experimental results, project updates and team contribution information. She also helped organize the written project documentation for submission.
-
+- **Lavya Sri Bonagiri:** Implemented and evaluated the LSTM baseline using the shared METR-LA preprocessing and evaluation pipeline. The model used the previous 12 traffic-speed measurements to predict the next 12 steps. Evaluation was performed at 15-, 30-, and 60-minute horizons using MAE, RMSE, and MAPE. Generated the LSTM training-loss curve and actual-versus-predicted speed plots, and updated the project documentation with the LSTM results and artifacts.
+  
 - **Mansi Gupta:** Implemented and organized the data-preprocessing pipeline, including chronological train/validation/test splitting, normalization, sliding-window preparation, missing-value handling and dataset preparation for model training. She also implemented and trained the STGCN model, conducted distance-based, correlation-based and no-graph comparisons, ran multi-seed experiments using seeds 42, 43, and 44, and contributed to missing-data and imputation experiments.
 
 - **Megha Gangal:** Worked on traffic-sensor graph construction, including distance-based and correlation-based graphs. She implemented and trained the DCRNN model using the distance-based sensor graph and contributed to model evaluation, training experiments and comparison of graph-based forecasting approaches. She also contributed to evaluation utilities and preliminary-result analysis.
