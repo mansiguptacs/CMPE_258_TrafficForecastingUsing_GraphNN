@@ -36,6 +36,8 @@ Repository layout:
 | `notebooks/03_train_dcrnn.ipynb` | DCRNN implementation and evaluation |
 | `notebooks/04_initial_data_exploration.ipynb` | Initial METR-LA data exploration and visualizations |
 | `results/` | Model metrics, training histories, multi-seed results, and missing-data results |
+| `notebooks/05_train_lstm.ipynb` | LSTM baseline training and evaluation |
+| `results/` | STGCN, DCRNN, and LSTM metrics, plots, and training histories |
 
 Setup (Python 3.10+):
 
@@ -103,4 +105,4 @@ Additional experiments evaluated model performance under missing sensor readings
 
 - ## Future Work
 
-The team plans to implement and evaluate the historical-average and LSTM baseline models. These models will be compared with STGCN and DCRNN using the same forecasting horizons and evaluation metrics.
+The team plans to implement and evaluate the historical-average baseline. This model will be compared with the LSTM, STGCN and DCRNN models using the same forecasting horizons and evaluation metrics.
