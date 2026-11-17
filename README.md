@@ -35,7 +35,6 @@ Repository layout:
 | `notebooks/03_train_stgcn.ipynb` | STGCN training, graph ablation, multi-seed, and missing-data experiments |
 | `notebooks/03_train_dcrnn.ipynb` | DCRNN implementation and evaluation |
 | `notebooks/04_initial_data_exploration.ipynb` | Initial METR-LA data exploration and visualizations |
-| `results/` | Model metrics, training histories, multi-seed results, and missing-data results |
 | `notebooks/05_train_lstm.ipynb` | LSTM baseline training and evaluation |
 | `results/` | STGCN, DCRNN, and LSTM metrics, plots, and training histories |
 
