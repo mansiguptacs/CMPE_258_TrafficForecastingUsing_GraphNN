@@ -79,7 +79,7 @@ The LSTM baseline has been trained and evaluated at 15-, 30-, and 60-minute hori
 
 ## Updates Since the Original Proposal
 
-The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The LSTM baseline was implemented and evaluated. The historical-average baseline remains planned for future work.
+The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The LSTM baseline was implemented and evaluated. The historical-average baseline was implemented and evaluated using the shared preprocessing and evaluation pipeline.
 
 ## Preliminary Experimental Results
 
@@ -109,7 +109,7 @@ The historical-average baseline error increased for longer forecasting horizons.
 
 The prediction visualization is available at `results/historical_average_prediction_comparison.png`, and the detailed metrics are stored in `results/historical_average_metrics.json`.
 
-## Team Contributions Through Check-in 4
+## Team Contributions 
 
 - **Lavya Sri Bonagiri:** Implemented and evaluated the LSTM and historical-average baselines using the shared METR-LA preprocessing and evaluation pipeline. The LSTM used the previous 12 traffic-speed measurements to predict the next 12 steps. The historical-average baseline used training-period averages for the corresponding day of week and time of day. Both baselines were evaluated at 15-, 30-, and 60-minute horizons using MAE, RMSE, and MAPE. Generated the LSTM loss curve, actual-versus-predicted plots, and historical-average prediction visualization, and added the notebooks and result artifacts to the project repository.
   
@@ -118,8 +118,6 @@ The prediction visualization is available at `results/historical_average_predict
 - **Megha Gangal:** Worked on traffic-sensor graph construction, including distance-based and correlation-based graphs. She implemented and trained the DCRNN model using the distance-based sensor graph and contributed to model evaluation, training experiments and comparison of graph-based forecasting approaches. She also contributed to evaluation utilities and preliminary-result analysis.
 
 - **All team members:** Contributed to project discussions, report coordination, code review, final documentation and presentation preparation.
-
-- ## Future Work
 
 ## Future Work
 
