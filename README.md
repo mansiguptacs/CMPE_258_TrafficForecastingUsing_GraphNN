@@ -36,7 +36,8 @@ Repository layout:
 | `notebooks/03_train_dcrnn.ipynb` | DCRNN implementation and evaluation |
 | `notebooks/04_initial_data_exploration.ipynb` | Initial METR-LA data exploration and visualizations |
 | `notebooks/05_train_lstm.ipynb` | LSTM baseline training and evaluation |
-| `results/` | STGCN, DCRNN, and LSTM metrics, plots, and training histories |
+| `notebooks/06_historical_average_baseline.ipynb` | Historical-average baseline implementation and evaluation |
+| `results/` | STGCN, DCRNN, LSTM, and historical-average metrics, plots, and training histories |
 
 Setup (Python 3.10+):
 
@@ -67,13 +68,14 @@ The repository now includes:
 - Distance-based and correlation-based sensor-graph construction
 - STGCN training with distance, correlation, and no-graph variants
 - Multi-seed experiments using seeds 42, 43, and 44
-- DCRNN training notebook and evaluation using the distance-based graph
+- DCRNN training notebooks and evaluation using distance-based and correlation-based graphs
 - Missing-data robustness experiments with different masking and imputation strategies
 - Evaluation using MAE, RMSE, and MAPE at 15-, 30-, and 60-minute horizons
 - Saved metrics and training-history files under `results/`
 - LSTM baseline training and evaluation with saved metrics and prediction visualizations
+- Historical-average baseline evaluation with saved metrics and prediction visualizations
 
-The LSTM baseline has been trained and evaluated at 15-, 30-, and 60-minute horizons. The historical-average baseline remains planned for future work.
+The LSTM baseline has been trained and evaluated at 15-, 30-, and 60-minute horizons. The historical-average baseline has been implemented and evaluated at 15-, 30-, and 60-minute horizons.
 
 ## Updates Since the Original Proposal
 
@@ -93,9 +95,23 @@ The distance-based and correlation-based graph models performed better than the 
 
 Additional experiments evaluated model performance under missing sensor readings and compared different imputation strategies. Detailed metrics and training histories are stored in the `results/` directory.
 
+### Historical-Average Baseline Results
+
+The historical-average baseline was evaluated using the same forecasting horizons and metrics as the other models.
+
+| Horizon | MAE | RMSE | MAPE |
+|---|---:|---:|---:|
+| 15 minutes | 4.2846 | 7.9921 | 13.2415% |
+| 30 minutes | 4.5184 | 8.3833 | 13.8754% |
+| 60 minutes | 5.1756 | 9.5160 | 15.7827% |
+
+The historical-average baseline error increased for longer forecasting horizons. It provides a simple non-neural reference for comparison with the LSTM, STGCN, and DCRNN models.
+
+The prediction visualization is available at `results/historical_average_prediction_comparison.png`, and the detailed metrics are stored in `results/historical_average_metrics.json`.
+
 ## Team Contributions Through Check-in 4
 
-- **Lavya Sri Bonagiri:** Implemented and evaluated the LSTM baseline using the shared METR-LA preprocessing and evaluation pipeline. The model used the previous 12 traffic-speed measurements to predict the next 12 steps. Evaluation was performed at 15-, 30-, and 60-minute horizons using MAE, RMSE, and MAPE. Generated the LSTM training-loss curve and actual-versus-predicted speed plots, and updated the project documentation with the LSTM results and artifacts.
+- **Lavya Sri Bonagiri:** Implemented and evaluated the LSTM and historical-average baselines using the shared METR-LA preprocessing and evaluation pipeline. The LSTM used the previous 12 traffic-speed measurements to predict the next 12 steps. The historical-average baseline used training-period averages for the corresponding day of week and time of day. Both baselines were evaluated at 15-, 30-, and 60-minute horizons using MAE, RMSE, and MAPE. Generated the LSTM loss curve, actual-versus-predicted plots, and historical-average prediction visualization, and added the notebooks and result artifacts to the project repository.
   
 - **Mansi Gupta:** Implemented and organized the data-preprocessing pipeline, including chronological train/validation/test splitting, normalization, sliding-window preparation, missing-value handling and dataset preparation for model training. She also implemented and trained the STGCN model, conducted distance-based, correlation-based and no-graph comparisons, ran multi-seed experiments using seeds 42, 43, and 44, and contributed to missing-data and imputation experiments.
 
@@ -105,4 +121,6 @@ Additional experiments evaluated model performance under missing sensor readings
 
 - ## Future Work
 
-The team plans to implement and evaluate the historical-average baseline. This model will be compared with the LSTM, STGCN and DCRNN models using the same forecasting horizons and evaluation metrics.
+## Future Work
+
+Future work will focus on completing the final cross-model comparison using compatible training and evaluation settings. The comparison will include the historical-average, LSTM, STGCN, and DCRNN models across all forecasting horizons. Further work may also include longer DCRNN training with early stopping and common missing-data evaluations for all models.
