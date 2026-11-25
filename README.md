@@ -33,12 +33,16 @@ Repository layout:
 | `notebooks/01_data_preprocess.ipynb` | Data preprocessing and dataset preparation |
 | `notebooks/02_graph_construction.ipynb` | Distance-based and correlation-based graph construction |
 | `notebooks/03_train_stgcn.ipynb` | STGCN training, graph ablation, multi-seed, and missing-data experiments |
-| `notebooks/03_train_dcrnn.ipynb` | DCRNN implementation and evaluation |
+| `notebooks/03_train_dcrnn.ipynb` | DCRNN training and evaluation with the distance-based graph |
+| `notebooks/04_train_dcrnn_correlation.ipynb` | DCRNN training and evaluation with the correlation-based graph |
+| `notebooks/04_dcrnn_multiseed_distance.ipynb` | Multi-seed DCRNN runs on the distance-based graph (seeds 42, 123, 2024) |
+| `notebooks/04_dcrnn_multiseed_correlation.ipynb` | Multi-seed DCRNN runs on the correlation-based graph (seeds 42, 123, 2024) |
 | `notebooks/04_initial_data_exploration.ipynb` | Initial METR-LA data exploration and visualizations |
 | `notebooks/05_train_lstm.ipynb` | LSTM baseline training and evaluation |
 | `notebooks/06_historical_average_baseline.ipynb` | Historical-average baseline implementation and evaluation |
 | `notebooks/07_compare_models.ipynb` | LSTM and historical-average baseline comparison |
 | `results/` | STGCN, DCRNN, LSTM, historical-average metrics, plots, prediction files, and baseline comparison results |
+| `results/dcrnn_graph_comparison_summary.csv` | Averaged DCRNN distance vs correlation metrics across seeds |
 
 Setup (Python 3.10+):
 
@@ -68,19 +72,20 @@ The repository now includes:
 - METR-LA preprocessing and chronological train/validation/test splitting
 - Distance-based and correlation-based sensor-graph construction
 - STGCN training with distance, correlation, and no-graph variants
-- Multi-seed experiments using seeds 42, 43, and 44
-- DCRNN training notebooks and evaluation using distance-based and correlation-based graphs
+- STGCN multi-seed experiments using seeds 42, 43, and 44
+- DCRNN training and evaluation using distance-based and correlation-based graphs
+- DCRNN multi-seed experiments using seeds 42, 123, and 2024 for both graph types
 - Missing-data robustness experiments with different masking and imputation strategies
 - Evaluation using MAE, RMSE, and MAPE at 15-, 30-, and 60-minute horizons
 - Saved metrics and training-history files under `results/`
 - LSTM baseline training and evaluation with saved metrics and prediction visualizations
 - Historical-average baseline evaluation with saved metrics and prediction visualizations
 
-The LSTM baseline has been trained and evaluated at 15-, 30-, and 60-minute horizons. The historical-average baseline has been implemented and evaluated at 15-, 30-, and 60-minute horizons.
+The LSTM baseline has been trained and evaluated at 15-, 30-, and 60-minute horizons. The historical-average baseline has been implemented and evaluated at 15-, 30-, and 60-minute horizons. DCRNN multi-seed distance and correlation results are available and summarized below.
 
 ## Updates Since the Original Proposal
 
-The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The LSTM baseline was implemented and evaluated. The historical-average baseline was implemented and evaluated using the same data split, normalization procedure, and evaluation metrics.
+The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was implemented and evaluated on both distance-based and correlation-based graphs, including multi-seed runs with seeds 42, 123, and 2024. The LSTM baseline was implemented and evaluated. The historical-average baseline was implemented and evaluated using the same data split, normalization procedure, and evaluation metrics.
 
 ## Preliminary Experimental Results
 
@@ -95,6 +100,26 @@ The STGCN models were evaluated at 15-, 30- and 60-minute forecasting horizons u
 The distance-based and correlation-based graph models performed better than the no-graph model. The performance difference was more noticeable at the 60-minute horizon, showing that spatial relationships between traffic sensors are useful for longer-term forecasting.
 
 Additional experiments evaluated model performance under missing sensor readings and compared different imputation strategies. Detailed metrics and training histories are stored in the `results/` directory.
+
+### DCRNN Results
+
+The DCRNN models were evaluated at 15-, 30- and 60-minute forecasting horizons using MAE, RMSE and MAPE. Results were averaged across random seeds 42, 123 and 2024 for both the distance-based and correlation-based sensor graphs.
+
+| Graph variant | 15-minute MAE | 30-minute MAE | 60-minute MAE |
+|---|---:|---:|---:|
+| Correlation-based graph | 2.937 | 3.486 | 4.321 |
+| Distance-based graph | 2.963 | 3.550 | 4.445 |
+
+| Graph variant | Horizon | MAE | RMSE | MAPE |
+|---|---|---:|---:|---:|
+| Correlation-based graph | 15 minutes | 2.937 ± 0.007 | 5.557 | 7.88% |
+| Correlation-based graph | 30 minutes | 3.486 ± 0.010 | 6.771 | 9.91% |
+| Correlation-based graph | 60 minutes | 4.321 ± 0.036 | 8.402 | 12.80% |
+| Distance-based graph | 15 minutes | 2.963 ± 0.006 | 5.663 | 7.92% |
+| Distance-based graph | 30 minutes | 3.550 ± 0.020 | 7.003 | 10.18% |
+| Distance-based graph | 60 minutes | 4.445 ± 0.051 | 8.790 | 13.75% |
+
+The correlation-based DCRNN performed slightly better than the distance-based DCRNN at all three horizons. Error increased with longer forecasting horizons for both graph variants. Per-seed metrics are stored under `results/dcrnn_distance_seed*/` and `results/dcrnn_correlation_seed*/`, and the averaged comparison is available at `results/dcrnn_graph_comparison_summary.csv`.
 
 ### Historical-Average Baseline Results
 
@@ -133,10 +158,10 @@ The baseline comparison results for the LSTM and historical-average models are a
   
 - **Mansi Gupta:** Implemented and organized the data-preprocessing pipeline, including chronological train/validation/test splitting, normalization, sliding-window preparation, missing-value handling and dataset preparation for model training. She also implemented and trained the STGCN model, conducted distance-based, correlation-based and no-graph comparisons, ran multi-seed experiments using seeds 42, 43, and 44, and contributed to missing-data and imputation experiments.
 
-- **Megha Gangal:** Worked on traffic-sensor graph construction, including distance-based and correlation-based graphs. She implemented and trained the DCRNN model using the distance-based sensor graph and contributed to model evaluation, training experiments and comparison of graph-based forecasting approaches. She also contributed to evaluation utilities and preliminary-result analysis.
+- **Megha Gangal:** Worked on traffic-sensor graph construction, including distance-based and correlation-based graphs. Implemented and trained the DCRNN model on both the distance-based and correlation-based sensor graphs, ran multi-seed experiments using seeds 42, 123, and 2024, and compared the two graph variants across 15-, 30-, and 60-minute horizons. Also contributed to model evaluation, training experiments, evaluation utilities, and preliminary-result analysis.
 
 - **All team members:** Contributed to project discussions, report coordination, code review, final documentation and presentation preparation.
 
 ## Future Work
 
-Future work will focus on completing the final cross-model comparison using compatible training and evaluation settings. The comparison will include the historical-average, LSTM, STGCN, and DCRNN models across all forecasting horizons. Further work may also include longer DCRNN training with early stopping and common missing-data evaluations for all models.
+Future work will focus on completing the final cross-model comparison using compatible training and evaluation settings for the historical-average, LSTM, STGCN, and DCRNN models across all forecasting horizons. Further work may also include common missing-data evaluations for all models and longer DCRNN training with early stopping where additional compute is available.
