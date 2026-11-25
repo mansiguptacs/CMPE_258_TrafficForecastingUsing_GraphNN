@@ -17,7 +17,7 @@ Links:
 
 
 Accurate traffic prediction can help drivers choose better routes, reduce traffic congestion and improve traffic-light control. However, many traditional time-series models only study how traffic changes over time and do not consider how nearby roads affect one another.
-This project will predict traffic speed at each sensor 15, 30 and 60 minutes into the future, corresponding to 3, 6 and 12 steps ahead, respectively, because the dataset uses a five-minute sampling interval. We will represent the traffic sensor network as a graph, where each sensor is a node and edges encode road connectivity and the distance between sensors. This structure allows the model to learn both how traffic changes over time and how conditions at one sensor may affect connected sensors.
+This project predicts traffic speed at each sensor 15, 30 and 60 minutes into the future, corresponding to 3, 6 and 12 steps ahead, respectively, because the dataset uses a five-minute sampling interval. The project represents the traffic sensor network as a graph, where each sensor is a node and edges encode road connectivity and the distance between sensors. This structure allows the model to learn both how traffic changes over time and how conditions at one sensor may affect connected sensors.
 
 
 ----------
@@ -37,7 +37,8 @@ Repository layout:
 | `notebooks/04_initial_data_exploration.ipynb` | Initial METR-LA data exploration and visualizations |
 | `notebooks/05_train_lstm.ipynb` | LSTM baseline training and evaluation |
 | `notebooks/06_historical_average_baseline.ipynb` | Historical-average baseline implementation and evaluation |
-| `results/` | STGCN, DCRNN, LSTM, and historical-average metrics, plots, and training histories |
+| `notebooks/07_compare_models.ipynb` | LSTM and historical-average baseline comparison |
+| `results/` | STGCN, DCRNN, LSTM, historical-average metrics, plots, prediction files, and baseline comparison results |
 
 Setup (Python 3.10+):
 
@@ -79,7 +80,7 @@ The LSTM baseline has been trained and evaluated at 15-, 30-, and 60-minute hori
 
 ## Updates Since the Original Proposal
 
-The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The LSTM baseline was implemented and evaluated. The historical-average baseline was implemented and evaluated using the shared preprocessing and evaluation pipeline.
+The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The LSTM baseline was implemented and evaluated. The historical-average baseline was implemented and evaluated using the same data split, normalization procedure, and evaluation metrics.
 
 ## Preliminary Experimental Results
 
@@ -109,9 +110,26 @@ The historical-average baseline produced nearly constant performance across the 
 
 The prediction visualization is available at `results/historical_average_prediction_comparison.png`, and the detailed metrics are stored in `results/historical_average_metrics.json`.
 
+
+### LSTM Baseline Results
+
+The LSTM baseline was evaluated using the same forecasting horizons and metrics.
+
+| Horizon | MAE | RMSE | MAPE |
+|---|---:|---:|---:|
+| 15 minutes | 3.8104 | 6.5285 | 10.6345% |
+| 30 minutes | 3.9324 | 6.8425 | 11.1449% |
+| 60 minutes | 4.2159 | 7.4250 | 12.2251% |
+
+The LSTM error increased as the forecasting horizon became longer. The LSTM performed better than the historical-average baseline at all three horizons.
+
+The LSTM loss curve and prediction visualization are available at `results/lstm_loss_curve.png` and `results/lstm_prediction_comparison.png`. The detailed metrics are stored at `results/lstm_metrics.json`.
+
+The baseline comparison results for the LSTM and historical-average models are available at `results/baseline_comparison.json`.
+
 ## Team Contributions 
 
-- **Lavya Sri Bonagiri:** Implemented and evaluated the LSTM and historical-average baselines using the shared METR-LA preprocessing and evaluation pipeline. The LSTM used the previous 12 traffic-speed measurements to predict the next 12 steps. The historical-average baseline used training-period averages for the corresponding day of week and time of day. Both baselines were evaluated at 15-, 30-, and 60-minute horizons using MAE, RMSE, and MAPE. Generated the LSTM loss curve, actual-versus-predicted plots, and historical-average prediction visualization, and added the notebooks and result artifacts to the project repository.
+- **Lavya Sri Bonagiri:** Implemented and evaluated the LSTM and historical-average baselines using the same METR-LA data split, normalization procedure, and evaluation metrics. The LSTM used the previous 12 traffic-speed measurements to predict the next 12 steps. The historical-average baseline used training-period averages for the corresponding day of week and time of day. Both baselines were evaluated at 15-, 30-, and 60-minute horizons using MAE, RMSE, and MAPE. Generated the LSTM loss curve, actual-versus-predicted plots, and historical-average prediction visualization, and added the notebooks and result artifacts to the project repository.
   
 - **Mansi Gupta:** Implemented and organized the data-preprocessing pipeline, including chronological train/validation/test splitting, normalization, sliding-window preparation, missing-value handling and dataset preparation for model training. She also implemented and trained the STGCN model, conducted distance-based, correlation-based and no-graph comparisons, ran multi-seed experiments using seeds 42, 43, and 44, and contributed to missing-data and imputation experiments.
 
