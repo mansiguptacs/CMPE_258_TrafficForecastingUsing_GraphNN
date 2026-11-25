@@ -17,7 +17,7 @@ Links:
 
 
 Accurate traffic prediction can help drivers choose better routes, reduce traffic congestion and improve traffic-light control. However, many traditional time-series models only study how traffic changes over time and do not consider how nearby roads affect one another.
-This project will predict traffic speed at each sensor 15, 30 and 60 minutes into the future, corresponding to 3, 6 and 12 steps ahead, respectively, because the dataset uses a five-minute sampling interval. We will represent the traffic sensor network as a graph, where each sensor is a node and edges encode road connectivity and the distance between sensors. This structure allows the model to learn both how traffic changes over time and how conditions at one sensor may affect connected sensors.
+This project predicts traffic speed at each sensor 15, 30 and 60 minutes into the future, corresponding to 3, 6 and 12 steps ahead, respectively, because the dataset uses a five-minute sampling interval. The project represents the traffic sensor network as a graph, where each sensor is a node and edges encode road connectivity and the distance between sensors. This structure allows the model to learn both how traffic changes over time and how conditions at one sensor may affect connected sensors.
 
 
 ----------
@@ -37,7 +37,10 @@ Repository layout:
 | `notebooks/04_train_dcrnn_correlation.ipynb`, `notebooks/04_dcrnn_multiseed_correlation.ipynb` | DCRNN on the correlation-based graph, single and multi-seed |
 | `notebooks/04_dcrnn_multiseed_distance.ipynb` | DCRNN on the distance-based graph, multi-seed |
 | `notebooks/04_initial_data_exploration.ipynb` | Initial METR-LA data exploration and visualizations |
-| `results/` | Model metrics, training histories, multi-seed summaries, missing-data results and the cross-model comparison |
+| `notebooks/05_train_lstm.ipynb` | LSTM baseline training and evaluation |
+| `notebooks/06_historical_average_baseline.ipynb` | Historical-average baseline implementation and evaluation |
+| `notebooks/07_compare_models.ipynb` | LSTM and historical-average baseline comparison |
+| `results/` | Metrics, training histories, test predictions and plots for every model, missing-data results and the cross-model comparison |
 
 Setup (Python 3.10+):
 
@@ -108,12 +111,14 @@ The repository now includes:
 - A shared missing-data test and a cross-model comparison script that every model's results go through
 - Evaluation using MAE, RMSE, and MAPE at 15-, 30-, and 60-minute horizons
 - Saved metrics and training-history files under `results/`
+- LSTM baseline training and evaluation with saved metrics and prediction visualizations
+- Historical-average baseline evaluation with saved metrics and prediction visualizations
 
-Historical-average and LSTM baselines are still planned or under development.
+The LSTM baseline has been trained and evaluated at 15-, 30-, and 60-minute horizons. The historical-average baseline has been implemented and evaluated at 15-, 30-, and 60-minute horizons.
 
 ## Updates Since the Original Proposal
 
-The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The historical-average and LSTM baselines remain under development.
+The original proposal identified DCRNN as the primary graph-based model and listed STGCN as an optional extension. During development, the team implemented substantial STGCN experiments, including distance-based, correlation-based and no-graph variants, multi-seed evaluation and missing-data experiments. DCRNN was also implemented and evaluated. The LSTM baseline was implemented and evaluated. The historical-average baseline was implemented and evaluated using the same data split, normalization procedure, and evaluation metrics.
 
 ## Preliminary Experimental Results
 
@@ -143,10 +148,41 @@ Training with hidden inputs lowers the normal test error by 3–4% and cuts the 
 
 DCRNN, trained for 10 epochs per run with seeds 42, 123 and 2024, reaches 2.94, 3.49 and 4.32 mph MAE at 15, 30 and 60 minutes on the correlation-based graph, slightly better than on the distance-based graph (2.96, 3.55 and 4.45). Both graph models therefore do slightly better with the correlation-based graph. DCRNN predictions are not saved yet, so `compare.py` reads its accuracy from each run's `metrics.json`, and DCRNN is not yet in the traffic-state and missing-data comparisons.
 
-## Team Contributions Through Check-in 3
+### Historical-Average Baseline Results
 
-- **Lavya Sri Bonagiri:** For this check-in, she updated and organized the project documentation for Check-in 3. Her work included updating the README with the project status, repository instructions, preliminary experimental results, project updates and team contribution information. She also helped organize the written project documentation for submission.
+The historical-average baseline was evaluated using the same forecasting horizons and metrics as the other models.
 
+| Horizon | MAE | RMSE | MAPE |
+|---|---:|---:|---:|
+| 15 minutes | 4.1858	| 7.8507 | 13.0299% |
+| 30 minutes | 4.1869 | 7.8524 | 13.0348% |
+| 60 minutes | 4.1893 | 7.8559 | 13.0447% |
+
+The historical-average baseline produced nearly constant performance across the three forecasting horizons. It provides a simple non-neural reference for comparison with the LSTM, STGCN, and DCRNN models.
+
+The prediction visualization is available at `results/historical_average_prediction_comparison.png`, and the detailed metrics are stored in `results/historical_average_metrics.json`.
+
+
+### LSTM Baseline Results
+
+The LSTM baseline was evaluated using the same forecasting horizons and metrics.
+
+| Horizon | MAE | RMSE | MAPE |
+|---|---:|---:|---:|
+| 15 minutes | 3.8104 | 6.5285 | 10.6345% |
+| 30 minutes | 3.9324 | 6.8425 | 11.1449% |
+| 60 minutes | 4.2159 | 7.4250 | 12.2251% |
+
+The LSTM error increased as the forecasting horizon became longer. The LSTM performed better than the historical-average baseline at all three horizons.
+
+The LSTM loss curve and prediction visualization are available at `results/lstm_loss_curve.png` and `results/lstm_prediction_comparison.png`. The detailed metrics are stored at `results/lstm_metrics.json`.
+
+The baseline comparison results for the LSTM and historical-average models are available at `results/baseline_comparison.json`.
+
+## Team Contributions 
+
+- **Lavya Sri Bonagiri:** Implemented and evaluated the LSTM and historical-average baselines using the same METR-LA data split, normalization procedure, and evaluation metrics. The LSTM used the previous 12 traffic-speed measurements to predict the next 12 steps. The historical-average baseline used training-period averages for the corresponding day of week and time of day. Both baselines were evaluated at 15-, 30-, and 60-minute horizons using MAE, RMSE, and MAPE. Generated the LSTM loss curve, actual-versus-predicted plots, and historical-average prediction visualization, and added the notebooks and result artifacts to the project repository.
+  
 - **Mansi Gupta:** Implemented and organized the data-preprocessing pipeline, including chronological train/validation/test splitting, normalization, sliding-window preparation, missing-value handling and dataset preparation for model training. She also implemented and trained the STGCN model, conducted distance-based, correlation-based and no-graph comparisons, ran multi-seed experiments using seeds 42, 43, and 44, and contributed to missing-data and imputation experiments.
 
 - **Megha Gangal:** Worked on traffic-sensor graph construction, including distance-based and correlation-based graphs. She implemented and trained the DCRNN model on the distance-based and correlation-based graphs, three seeds each, and contributed to model evaluation, training experiments and comparison of graph-based forecasting approaches. She also contributed to evaluation utilities and preliminary-result analysis.
@@ -155,4 +191,4 @@ DCRNN, trained for 10 epochs per run with seeds 42, 123 and 2024, reaches 2.94, 
 
 ## Future Work
 
-The team plans to implement and evaluate the historical-average and LSTM baseline models, save DCRNN test predictions in the shared format, and run every model through `src/eval/compare.py` and the shared missing-data test, so that all four models are compared with the same forecasting horizons and evaluation metrics.
+Future work will focus on completing the final cross-model comparison using compatible training and evaluation settings. The comparison will include the historical-average, LSTM, STGCN, and DCRNN models across all forecasting horizons. Further work may also include longer DCRNN training with early stopping and common missing-data evaluations for all models.
