@@ -101,11 +101,11 @@ The historical-average baseline was evaluated using the same forecasting horizon
 
 | Horizon | MAE | RMSE | MAPE |
 |---|---:|---:|---:|
-| 15 minutes | 4.2846 | 7.9921 | 13.2415% |
-| 30 minutes | 4.5184 | 8.3833 | 13.8754% |
-| 60 minutes | 5.1756 | 9.5160 | 15.7827% |
+| 15 minutes | 4.1858	| 7.8507 | 13.0299% |
+| 30 minutes | 4.1869 | 7.8524 | 13.0348% |
+| 60 minutes | 4.1893 | 7.8559 | 13.0447% |
 
-The historical-average baseline error increased for longer forecasting horizons. It provides a simple non-neural reference for comparison with the LSTM, STGCN, and DCRNN models.
+The historical-average baseline produced nearly constant performance across the three forecasting horizons. It provides a simple non-neural reference for comparison with the LSTM, STGCN, and DCRNN models.
 
 The prediction visualization is available at `results/historical_average_prediction_comparison.png`, and the detailed metrics are stored in `results/historical_average_metrics.json`.
 
