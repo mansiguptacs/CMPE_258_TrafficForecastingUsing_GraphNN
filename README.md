@@ -27,12 +27,12 @@ Repository layout:
 | Path | Contents |
 |------|----------|
 | `configs/metr_la.yaml` | Shared settings for windows, horizons, splits, normalization, graphs, and STGCN hyperparameters |
-| `src/data/` | Data loading, chronological splitting, normalization, missing-value handling, and sliding-window generation |
-| `src/eval/` | MAE, RMSE, MAPE, and missing-data evaluation utilities |
-| `src/models/stgcn/` | STGCN model, graph construction, training, and experiment utilities |
+| `src/data/` | Data loading, chronological splitting, normalization, missing-value handling, sliding windows, and training-time input masking (`augment.py`) |
+| `src/eval/` | MAE, RMSE and MAPE (`metrics.py`), the shared missing-data test for any model (`masked_inputs.py`), the STGCN missing-data evaluation (`missing_eval.py`), and the cross-model comparison (`compare.py`) |
+| `src/models/stgcn/` | STGCN model, graph construction, training, and the experiment and hyperparameter-search queue |
 | `notebooks/01_data_preprocess.ipynb` | Data preprocessing and dataset preparation |
 | `notebooks/02_graph_construction.ipynb` | Distance-based and correlation-based graph construction |
-| `notebooks/03_train_stgcn.ipynb` | STGCN training, graph ablation, multi-seed, and missing-data experiments |
+| `notebooks/03_train_stgcn.ipynb` | STGCN training, graph ablation, multi-seed, missing-data, hidden-input training and hyperparameter-search results |
 | `notebooks/03_train_dcrnn.ipynb` | DCRNN training and evaluation with the distance-based graph |
 | `notebooks/04_train_dcrnn_correlation.ipynb` | DCRNN training and evaluation with the correlation-based graph |
 | `notebooks/04_dcrnn_multiseed_distance.ipynb` | Multi-seed DCRNN runs on the distance-based graph (seeds 42, 123, 2024) |
@@ -41,7 +41,7 @@ Repository layout:
 | `notebooks/05_train_lstm.ipynb` | LSTM baseline training and evaluation |
 | `notebooks/06_historical_average_baseline.ipynb` | Historical-average baseline implementation and evaluation |
 | `notebooks/07_compare_models.ipynb` | LSTM and historical-average baseline comparison |
-| `results/` | STGCN, DCRNN, LSTM, historical-average metrics, plots, prediction files, and baseline comparison results |
+| `results/` | Metrics, training histories, test predictions and plots for every model, missing-data results and the cross-model comparison |
 | `results/dcrnn_graph_comparison_summary.csv` | Averaged DCRNN distance vs correlation metrics across seeds |
 
 Setup (Python 3.10+):
@@ -65,6 +65,39 @@ jupyter notebook notebooks/        # open the required notebook
 
 To run on Google Colab: add a shortcut to the shared Drive folder in My Drive named `CMPE258_TrafficGNN`, containing `data/raw/` with `metr-la.h5` and `adj_mx.pkl`. Open a notebook from GitHub in Colab and run all cells. Use a GPU runtime for model notebooks.
 
+STGCN experiments (each command skips runs that already have results):
+
+```
+python -m src.models.stgcn.experiments run           # all STGCN variants and seeds (--limit N trains at most N runs)
+python -m src.models.stgcn.experiments summary       # mean ± std table -> results/stgcn_summary.json
+python -m src.models.stgcn.experiments tune          # hyperparameter search -> results/stgcn_tuning.json
+python -m src.eval.missing_eval                      # missing-data tests for trained STGCNs -> results/missing_eval.json
+python -m src.eval.compare                           # all models side by side -> results/comparison.json
+```
+
+## Saving results for the final comparison
+
+Every model is compared on the same test windows by `src/eval/compare.py`. For a run named `<tag>` (for example `ha`, `lstm_s42`, `dcrnn_correlation_seed42`), save the test predictions in mph, shaped `[6832, 12, 207]` (test windows in time order, all 12 steps, sensors in METR-LA column order):
+
+```python
+np.savez_compressed(f"results/{tag}/test_predictions.npz", pred=pred_mph.astype(np.float32))
+```
+
+A run without saved predictions but with a `metrics.json` in the DCRNN format (`{"15_min": {"MAE": ..., "RMSE": ..., "MAPE": ...}, ...}`) still appears in the accuracy table.
+
+Models that read recent speeds (LSTM, DCRNN) should also run the shared missing-data test, which hides exactly the same readings for every model:
+
+```python
+from src.eval.masked_inputs import mask_settings, masked_test_inputs, score, save_rows
+rows = []
+for mode, rate, seed in mask_settings():
+    x = masked_test_inputs(mode, rate, seed)          # [6832, 12, 207], normalized, forward-filled, like test_X
+    rows.append(score(predict_mph(x), mode, rate, seed))
+save_rows(tag, rows)                                  # results/<tag>/missing_eval.json
+```
+
+The historical average does not use recent readings, so `compare.py` scores it on every missing-data setting automatically.
+
 ## Current Project Status
 
 The repository now includes:
@@ -76,6 +109,9 @@ The repository now includes:
 - DCRNN training and evaluation using distance-based and correlation-based graphs
 - DCRNN multi-seed experiments using seeds 42, 123, and 2024 for both graph types
 - Missing-data robustness experiments with different masking and imputation strategies
+- STGCN trained with hidden inputs (the final STGCN), for all three graph variants with three seeds
+- A hyperparameter search for STGCN, judged on validation error
+- A shared missing-data test and a cross-model comparison script that every model's results go through
 - Evaluation using MAE, RMSE, and MAPE at 15-, 30-, and 60-minute horizons
 - Saved metrics and training-history files under `results/`
 - LSTM baseline training and evaluation with saved metrics and prediction visualizations
@@ -100,6 +136,19 @@ The STGCN models were evaluated at 15-, 30- and 60-minute forecasting horizons u
 The distance-based and correlation-based graph models performed better than the no-graph model. The performance difference was more noticeable at the 60-minute horizon, showing that spatial relationships between traffic sensors are useful for longer-term forecasting.
 
 Additional experiments evaluated model performance under missing sensor readings and compared different imputation strategies. Detailed metrics and training histories are stored in the `results/` directory.
+
+### Final STGCN (Check-in 4)
+
+The final STGCN fills missing inputs with the training mean plus a missing-indicator channel, and is trained with extra inputs hidden in every batch (`missing.train_mask`). Test MAE in mph, mean ± standard deviation over seeds 42, 43 and 44:
+
+| Graph variant | 15-minute MAE | 30-minute MAE | 60-minute MAE | Dead sensors, 30% switched off |
+|---|---:|---:|---:|---:|
+| Correlation-based graph (final) | 2.718 ± 0.010 | 3.081 ± 0.014 | 3.531 ± 0.020 | 3.45 |
+| Distance-based graph | 2.745 ± 0.025 | 3.124 ± 0.026 | 3.576 ± 0.024 | 3.49 |
+| No graph connections | 2.914 ± 0.059 | 3.340 ± 0.060 | 3.805 ± 0.069 | 4.20 |
+
+Training with hidden inputs lowers the normal test error by 3–4% and cuts the error on switched-off sensors from 5.1–6.4 mph to about 3.3–3.5 mph. A hyperparameter search over seven single changes (`results/stgcn_tuning.json`) found nothing better than the original settings by more than 0.01 mph on validation.
+
 
 ### DCRNN Results
 
